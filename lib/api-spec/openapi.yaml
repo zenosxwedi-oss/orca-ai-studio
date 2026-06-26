@@ -1,0 +1,459 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: Orca AI Studio API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health
+  - name: chat
+    description: AI Chat
+  - name: images
+    description: Image generation and editing
+  - name: videos
+    description: Video generation
+  - name: files
+    description: File management and archives
+  - name: github
+    description: GitHub integration
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /chat:
+    post:
+      operationId: sendMessage
+      tags: [chat]
+      summary: Send a message (non-streaming)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatMessageInput"
+      responses:
+        "200":
+          description: AI response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatResponse"
+
+  /images/generate:
+    post:
+      operationId: generateImage
+      tags: [images]
+      summary: Generate an image with AI
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImageGenerateInput"
+      responses:
+        "200":
+          description: Generated image
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GeneratedImage"
+
+  /images:
+    get:
+      operationId: listImages
+      tags: [images]
+      summary: List all generated images
+      responses:
+        "200":
+          description: List of images
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StoredImage"
+
+  /images/{id}:
+    delete:
+      operationId: deleteImage
+      tags: [images]
+      summary: Delete an image
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessMessage"
+
+  /videos/generate:
+    post:
+      operationId: generateVideo
+      tags: [videos]
+      summary: Generate a short animated video (HTML5 canvas-based)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VideoGenerateInput"
+      responses:
+        "200":
+          description: Generated video HTML/canvas code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GeneratedVideo"
+
+  /videos:
+    get:
+      operationId: listVideos
+      tags: [videos]
+      summary: List all generated videos
+      responses:
+        "200":
+          description: List of videos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StoredVideo"
+
+  /files:
+    get:
+      operationId: listFiles
+      tags: [files]
+      summary: List uploaded files
+      responses:
+        "200":
+          description: List of files
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UploadedFile"
+
+  /files/download-zip:
+    post:
+      operationId: downloadAsZip
+      tags: [files]
+      summary: Package selected files into a ZIP for download
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ZipInput"
+      responses:
+        "200":
+          description: ZIP info with download URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ZipResult"
+
+  /files/{id}:
+    delete:
+      operationId: deleteFile
+      tags: [files]
+      summary: Delete a file
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessMessage"
+
+  /github/save:
+    post:
+      operationId: saveToGithub
+      tags: [github]
+      summary: Save files to a GitHub repository
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GithubSaveInput"
+      responses:
+        "200":
+          description: GitHub save result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GithubSaveResult"
+
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [health]
+      summary: Dashboard stats
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required: [status]
+
+    SuccessMessage:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required: [success, message]
+
+    ChatMessage:
+      type: object
+      properties:
+        role:
+          type: string
+        content:
+          type: string
+      required: [role, content]
+
+    TokenUsage:
+      type: object
+      properties:
+        prompt_tokens:
+          type: integer
+        completion_tokens:
+          type: integer
+        total_tokens:
+          type: integer
+      required: [prompt_tokens, completion_tokens, total_tokens]
+
+    ChatMessageInput:
+      type: object
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChatMessage"
+        model:
+          type: ["string", "null"]
+      required: [messages]
+
+    ChatResponse:
+      type: object
+      properties:
+        message:
+          $ref: "#/components/schemas/ChatMessage"
+        model:
+          type: string
+        usage:
+          $ref: "#/components/schemas/TokenUsage"
+      required: [message, model]
+
+    ImageGenerateInput:
+      type: object
+      properties:
+        prompt:
+          type: string
+        size:
+          type: ["string", "null"]
+        style:
+          type: ["string", "null"]
+      required: [prompt]
+
+    GeneratedImage:
+      type: object
+      properties:
+        id:
+          type: string
+        url:
+          type: string
+        prompt:
+          type: string
+        createdAt:
+          type: string
+      required: [id, url, prompt, createdAt]
+
+    StoredImage:
+      type: object
+      properties:
+        id:
+          type: string
+        url:
+          type: string
+        prompt:
+          type: string
+        filename:
+          type: string
+        createdAt:
+          type: string
+      required: [id, url, prompt, filename, createdAt]
+
+    VideoGenerateInput:
+      type: object
+      properties:
+        prompt:
+          type: string
+        duration:
+          type: integer
+        style:
+          type: ["string", "null"]
+      required: [prompt, duration]
+
+    GeneratedVideo:
+      type: object
+      properties:
+        id:
+          type: string
+        htmlCode:
+          type: string
+        prompt:
+          type: string
+        duration:
+          type: integer
+        createdAt:
+          type: string
+      required: [id, htmlCode, prompt, duration, createdAt]
+
+    StoredVideo:
+      type: object
+      properties:
+        id:
+          type: string
+        htmlCode:
+          type: string
+        prompt:
+          type: string
+        duration:
+          type: integer
+        filename:
+          type: string
+        createdAt:
+          type: string
+      required: [id, htmlCode, prompt, duration, filename, createdAt]
+
+    UploadedFile:
+      type: object
+      properties:
+        id:
+          type: string
+        filename:
+          type: string
+        originalName:
+          type: string
+        size:
+          type: integer
+        mimeType:
+          type: string
+        url:
+          type: string
+        isArchive:
+          type: boolean
+        createdAt:
+          type: string
+      required: [id, filename, originalName, size, mimeType, url, isArchive, createdAt]
+
+    ZipInput:
+      type: object
+      properties:
+        fileIds:
+          type: array
+          items:
+            type: string
+        zipName:
+          type: ["string", "null"]
+      required: [fileIds]
+
+    ZipResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        downloadUrl:
+          type: string
+        filename:
+          type: string
+        size:
+          type: integer
+      required: [success, downloadUrl, filename, size]
+
+    GithubSaveInput:
+      type: object
+      properties:
+        token:
+          type: string
+        repo:
+          type: string
+        branch:
+          type: ["string", "null"]
+        message:
+          type: ["string", "null"]
+        fileIds:
+          type: array
+          items:
+            type: string
+      required: [token, repo, fileIds]
+
+    GithubSaveResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        url:
+          type: string
+        message:
+          type: string
+      required: [success, url, message]
+
+    DashboardStats:
+      type: object
+      properties:
+        totalImages:
+          type: integer
+        totalVideos:
+          type: integer
+        totalFiles:
+          type: integer
+        recentImages:
+          type: array
+          items:
+            $ref: "#/components/schemas/StoredImage"
+        recentVideos:
+          type: array
+          items:
+            $ref: "#/components/schemas/StoredVideo"
+      required: [totalImages, totalVideos, totalFiles, recentImages, recentVideos]
